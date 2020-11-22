@@ -1,34 +1,103 @@
-const container = document.querySelector(".game__container");
-const cells = document.querySelectorAll(".game__cell");
-const currentTurn = document.querySelector("#currentTurn");
-// const scoreOne = document.querySelector(".scoreOne");
-// const scoreTwo = document.querySelector(".scoreTwo");
+const cells = document.querySelectorAll("[data-cell]");
+const gameContainer = document.getElementById("gameContainer");
+const winBlockOverlay = document.getElementById("winningMsg");
+const winningMsg = document.querySelector("[data-overlay--msg]");
+const restartBtn = document.getElementById("restartBtn");
 
-const restartGame = document.querySelector(".restart");
+const xClass = "x";
+const circleClass = "circle";
 
-let currentPlayer = "Next Turn: Player Two";
+const winCombinations = [
+  [0, 1, 2],
+  [3, 4, 5],
+  [6, 7, 8],
+  [0, 3, 6],
+  [1, 4, 7],
+  [2, 5, 8],
+  [0, 4, 8],
+  [2, 4, 6],
+];
 
-cells.forEach((cell) => {
-  const cellArray = Array.from(cells);
+let circlePlayer = false;
 
-  cell.addEventListener("click", (e) => {
-    currentTurn.innerHTML = currentPlayer;
-    // let counterPlayerOne = "";
-    // let counterPlayerTwo = "";
-
-    if (currentPlayer === "Next Turn: Player Two") {
-      cell.classList.add("playerOne");
-      currentPlayer = "Next Turn: Player One";
-      // counterPlayerOne++;
-    } else {
-      cell.classList.add("playerTwo");
-      currentPlayer = "Next Turn: Player Two";
-    }
-  });
-});
-restartGame.addEventListener("click", () => {
+const startGame = () => {
+  // parse every cells and process event only once
   cells.forEach((cell) => {
-    cell.classList.remove("playerOne");
-    cell.classList.remove("playerTwo");
+    cell.classList.remove(xClass);
+    cell.classList.remove(circleClass);
+    cell.removeEventListener("click", handleClick);
+    cell.addEventListener("click", handleClick, { once: true });
   });
-});
+  setContainerHoverClass();
+  winBlockOverlay.classList.remove("show");
+};
+
+const placeMark = (cell, currentClass) => {
+  cell.classList.add(currentClass);
+};
+
+const swapTurns = () => {
+  circlePlayer = !circlePlayer;
+};
+
+const setContainerHoverClass = () => {
+  gameContainer.classList.remove(xClass);
+  gameContainer.classList.remove(circleClass);
+  if (circlePlayer) {
+    gameContainer.classList.add(circleClass);
+  } else {
+    gameContainer.classList.add(xClass);
+  }
+};
+
+startGame();
+
+const checkWin = (currentClass) => {
+  // if any winCombinations have any combination return true
+  return winCombinations.some((combination) => {
+    //   check every element in a combination and return if true
+    return combination.every((i) => {
+      // check if single elem in cells array has specific class
+      return cells[i].classList.contains(currentClass);
+    });
+  });
+};
+
+const endGame = (draw) => {
+  if (draw) {
+    winningMsg.innerText = "It is a draw !";
+  } else {
+    winningMsg.innerText = `${circlePlayer ? "Player O" : "Player X"} Wins !`;
+  }
+  winBlockOverlay.classList.add("show");
+};
+
+const isDraw = () => {
+  return [...cells].every((cell) => {
+    return (
+      cell.classList.contains(xClass) || cell.classList.contains(circleClass)
+    );
+  });
+};
+
+restartBtn.addEventListener("click", startGame);
+
+function handleClick(e) {
+  // place mark
+  const cell = e.target;
+  const currentClass = circlePlayer ? circleClass : xClass;
+  placeMark(cell, currentClass);
+
+  if (checkWin(currentClass)) {
+    endGame(false);
+  } else if (isDraw()) {
+    endGame(true);
+  } else {
+    swapTurns();
+    setContainerHoverClass();
+  }
+
+  // check if win
+  // check if draw
+  // switch current player
+}
